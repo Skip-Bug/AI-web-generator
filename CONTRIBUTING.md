@@ -117,3 +117,9 @@ $ uv lock
 $ poe
 ...
 ```
+
+Схемы приложения FastAI:
+
+- Схема: [Локальная инсталляция бэкенда](https://dvmn.org/media/filer_public/15/32/1532e61b-c7dc-4338-af61-e3ce9df42686/backend_local_installationdrawio.png)
+- Схема: [Prod инсталляция бэкенда](https://dvmn.org/media/filer_public/91/78/9178f016-77d6-4d69-bc85-d1012b374773/backend_prod_installationdrawio.png)
+- Схема: [Декомпозиция бэкенда по подсистемам](https://dvmn.org/media/filer_public/2c/03/2c038f84-84fb-4dd0-b69b-d685620aafa8/backend_decompositiondrawio.png)
