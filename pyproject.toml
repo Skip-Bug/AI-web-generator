@@ -13,7 +13,7 @@ dependencies = [
 [tool.poe.tasks]
 lint = "ruff check ./src"
 format = "ruff format ./src"
-run = "fastapi dev scr/main.py"
+run = "fastapi dev src/main.py"
 pre = "pre-commit run --all-files"
 
 
