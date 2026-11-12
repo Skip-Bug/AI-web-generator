@@ -8,6 +8,7 @@ dependencies = [
     "editorconfig-checker==3.2.1",
     "fastapi[standard]==0.115.12",
 
+    "pydantic>=2.11.7",
 ]
 
 [tool.poe.tasks]
@@ -22,4 +23,12 @@ dev = [
     "poethepoet>=0.49.0",
     "pre-commit>=4.3.0",
     "ruff==0.11.13",
+    "mypy>=2.4.1",
 ]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["src", "tests"]
+warn_unused_configs = true
+strict = true
+ignore_missing_imports = true
