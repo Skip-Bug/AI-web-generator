@@ -17,7 +17,6 @@ from ..schemas.sites import (
 BASE_URL = getenv("BASE_URL", "http://127.0.0.1:8000")
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
 STUB_DIR = BASE_DIR / "stub"
@@ -44,7 +43,11 @@ def validate_site_id(site_id: int) -> int:
     return site_id
 
 
-@sites_router.get("/my")
+@sites_router.get(
+    "/my",
+    summary="Список сайтов пользователя",
+    response_description="Список всех сайтов, созданных текущим пользователем",
+)
 def get_my_sites() -> GeneratedSitesResponse:
     return GeneratedSitesResponse(sites=[MOCK_SITE])
 
@@ -52,6 +55,7 @@ def get_my_sites() -> GeneratedSitesResponse:
 @sites_router.get(
     "/{site_id}/screenshot",
     summary="Скриншот сайта",
+    response_description="Файл изображения со скриншотом страницы сайта",
 )
 def get_site_screenshot(
     site_id: int = Depends(validate_site_id),
@@ -65,6 +69,7 @@ def get_site_screenshot(
 @sites_router.get(
     "/{site_id}/html",
     summary="Просмотр HTML кода сайта",
+    response_description="Готовый HTML-файл сгенерированного сайта",
 )
 def view_site_html(
     site_id: int = Depends(validate_site_id),
@@ -80,12 +85,22 @@ def view_site_html(
     )
 
 
-@sites_router.get("/{site_id}", response_model=SiteResponse)
+@sites_router.get(
+    "/{site_id}",
+    summary="Получение данных конкретного сайта",
+    response_description="JSON-объект с полной информацией о сайте (метаданные)",
+    response_model=SiteResponse,
+)
 def get_site(site_id: int = Depends(validate_site_id)) -> SiteResponse:
     return MOCK_SITE
 
 
-@sites_router.post("/create", response_model=SiteResponse)
+@sites_router.post(
+    "/create",
+    summary="Создание карточки нового сайта",
+    response_description="JSON-объект с данными только что созданного сайта",
+    response_model=SiteResponse,
+)
 def create_site(data: CreateSiteRequest) -> SiteResponse:
     update_data = {"prompt": data.prompt}
     if data.title is not None:
@@ -99,14 +114,15 @@ async def stream_stub_html(html_content: str) -> AsyncGenerator[str, None]:
     for i in range(0, len(html_content), chunk_size):
         chunk = html_content[i : i + chunk_size]
         yield chunk
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.05)
 
 
 @sites_router.post(
     "/{site_id}/generate",
     response_class=StreamingResponse,
-    summary="Сгенерировать HTML код сайта",
+    summary="Генерация HTML кода сайта",
     description="Код сайта будет транслироваться стримом по мере генерации.",
+    response_description="Непрерывный поток (стрим) с HTML-кодом",
     responses={
         200: {
             "description": "HTML-код сайта, передаётся стримом",

@@ -18,7 +18,7 @@ MOCK_USER = UserDetailsResponse(
 
 @users_router.get(
     "/me",
-    summary="Мои данные",
+    summary="Профиль пользователя",
     response_description="Данные текущего пользователя",
     response_model=UserDetailsResponse,
 )
