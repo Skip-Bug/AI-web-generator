@@ -7,6 +7,7 @@ requires-python = "==3.13.*"
 dependencies = [
     "editorconfig-checker==3.2.1",
     "fastapi[standard]==0.115.12",
+    "html-page-generator",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.16.3",
 ]
@@ -32,3 +33,6 @@ files = ["src", "tests"]
 warn_unused_configs = true
 strict = true
 ignore_missing_imports = true
+
+[tool.uv.sources]
+html-page-generator = { git = "https://github.com/devmanorg/html-page-generator.git" }

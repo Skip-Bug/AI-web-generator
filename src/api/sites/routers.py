@@ -1,11 +1,11 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from datetime import datetime
-from os import getenv
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+
+from src.env_settings import settings
 
 from .schemas import (
     CreateSiteRequest,
@@ -14,13 +14,9 @@ from .schemas import (
     SiteResponse,
 )
 
-BASE_URL = getenv("BASE_URL", "http://127.0.0.1:8000")
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
-STUB_DIR = BASE_DIR / "stub"
-HTML_STUB_PATH = STUB_DIR / "Стегозавры_ Гиганты Юрского периода.html"
+HTML_STUB_PATH = settings.stub_dir / "Стегозавры_ Гиганты Юрского периода.html"
 
 MOCK_SITE = SiteResponse(
     id=1,
@@ -28,9 +24,9 @@ MOCK_SITE = SiteResponse(
     prompt="Сделай сайт про Стегозавров",
     created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    html_code_url=f"{BASE_URL}/frontend-api/stub/Стегозавры_ Гиганты Юрского периода.html",
-    html_code_download_url=f"{BASE_URL}/frontend-api/stub/Стегозавры_ Гиганты Юрского периода.html",
-    screenshot_url=f"{BASE_URL}/frontend-api/stub/screenshot.jpg",
+    html_code_url=f"{settings.stub_url}/Стегозавры_ Гиганты Юрского периода.html",
+    html_code_download_url=f"{settings.stub_url}/Стегозавры_ Гиганты Юрского периода.html",
+    screenshot_url=f"{settings.stub_url}/screenshot.jpg",
 )
 
 
@@ -73,7 +69,7 @@ def create_site(data: CreateSiteRequest) -> SiteResponse:
     return MOCK_SITE.model_copy(update=update_data)
 
 
-async def stream_stub_html(html_content: str) -> AsyncGenerator[str, None]:
+async def stream_stub_html(html_content: str) -> AsyncGenerator[str]:
     """Генерирует части HTML-кода"""
     chunk_size = 100
     for i in range(0, len(html_content), chunk_size):
