@@ -8,6 +8,7 @@ dependencies = [
     "editorconfig-checker==3.2.1",
     "fastapi[standard]==0.115.12",
     "pydantic>=2.11.7",
+    "pydantic-settings>=2.16.3",
 ]
 
 [tool.poe.tasks]

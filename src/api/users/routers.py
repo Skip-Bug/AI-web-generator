@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter
 
-from ..schemas.users import UserDetailsResponse
+from .schemas import UserDetailsResponse
 
 users_router = APIRouter(tags=["Users"], prefix="/users")
 

@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import ConfigDict, Field, StringConstraints
 
-from .users import CamelCaseModel
+from ..users.schemas import CamelCaseModel
 
 SiteTitle = Annotated[
     str,

@@ -5,9 +5,9 @@ from os import getenv
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 
-from ..schemas.sites import (
+from .schemas import (
     CreateSiteRequest,
     GeneratedSitesResponse,
     SiteGenerationRequest,
@@ -15,14 +15,12 @@ from ..schemas.sites import (
 )
 
 BASE_URL = getenv("BASE_URL", "http://127.0.0.1:8000")
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
 STUB_DIR = BASE_DIR / "stub"
 HTML_STUB_PATH = STUB_DIR / "Стегозавры_ Гиганты Юрского периода.html"
-ASSETS_STUB_DIR = STUB_DIR / "Стегозавры_ Гиганты Юрского периода_files"
-SCREENSHOT_STUB_PATH = STUB_DIR / "screenshot.jpg"
 
 MOCK_SITE = SiteResponse(
     id=1,
@@ -30,9 +28,9 @@ MOCK_SITE = SiteResponse(
     prompt="Сделай сайт про Стегозавров",
     created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    html_code_url=f"{BASE_URL}/frontend-api/sites/1/html",
-    html_code_download_url=f"{BASE_URL}/frontend-api/sites/1/html?download=true",
-    screenshot_url=f"{BASE_URL}/frontend-api/sites/1/screenshot",
+    html_code_url=f"{BASE_URL}/frontend-api/stub/Стегозавры_ Гиганты Юрского периода.html",
+    html_code_download_url=f"{BASE_URL}/frontend-api/stub/Стегозавры_ Гиганты Юрского периода.html",
+    screenshot_url=f"{BASE_URL}/frontend-api/stub/screenshot.jpg",
 )
 
 
@@ -50,39 +48,6 @@ def validate_site_id(site_id: int) -> int:
 )
 def get_my_sites() -> GeneratedSitesResponse:
     return GeneratedSitesResponse(sites=[MOCK_SITE])
-
-
-@sites_router.get(
-    "/{site_id}/screenshot",
-    summary="Скриншот сайта",
-    response_description="Файл изображения со скриншотом страницы сайта",
-)
-def get_site_screenshot(
-    site_id: int = Depends(validate_site_id),
-) -> FileResponse:
-    if not SCREENSHOT_STUB_PATH.exists():
-        raise HTTPException(status_code=404, detail="Screenshot not found")
-
-    return FileResponse(path=SCREENSHOT_STUB_PATH, media_type="image/jpeg")
-
-
-@sites_router.get(
-    "/{site_id}/html",
-    summary="Просмотр HTML кода сайта",
-    response_description="Готовый HTML-файл сгенерированного сайта",
-)
-def view_site_html(
-    site_id: int = Depends(validate_site_id),
-    download: bool = False,
-) -> FileResponse:
-    if not HTML_STUB_PATH.exists():
-        raise HTTPException(status_code=404, detail="HTML file not found")
-
-    return FileResponse(
-        path=HTML_STUB_PATH,
-        media_type="text/html",
-        filename="index.html" if download else None,
-    )
 
 
 @sites_router.get(
