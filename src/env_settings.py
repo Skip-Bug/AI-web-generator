@@ -20,20 +20,27 @@ class UnsplashSettings(BaseModel):
     api_key: SecretStr
     max_connections: PositiveInt | None = None
     timeout: PositiveInt = 20
-    client_id: str | None = None
+    proxy: AnyHttpUrl | None = None
 
 
 class Settings(BaseSettings):
-    root_path: str = "/frontend-api"
+    api_prefix: str = "/frontend-api"
     base_url: str = "http://127.0.0.1:8000"
+
     debug: bool = False
+    mock_mode: bool = False
 
     stub_dir: Path = BASE_DIR / "stub"
     frontend_dir: Path = BASE_DIR / "frontend"
+    output_dir: Path = BASE_DIR / "output"
 
     @property
     def stub_url(self) -> str:
-        return f"{self.base_url}{self.root_path}/stub"
+        return f"{self.base_url}/stub"
+
+    @property
+    def output_url(self) -> str:
+        return f"{self.base_url}/output"
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -45,4 +52,4 @@ class Settings(BaseSettings):
     unsplash: UnsplashSettings
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[reportCallIssue]

@@ -1,22 +1,19 @@
-import asyncio
-from collections.abc import AsyncGenerator
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from src.env_settings import settings
-
-from .schemas import (
+from src.api.sites.schemas import (
     CreateSiteRequest,
     GeneratedSitesResponse,
     SiteGenerationRequest,
     SiteResponse,
 )
+from src.env_settings import settings
+from src.services.site_builder import get_html_stream
 
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
-HTML_STUB_PATH = settings.stub_dir / "Стегозавры_ Гиганты Юрского периода.html"
 
 MOCK_SITE = SiteResponse(
     id=1,
@@ -24,8 +21,8 @@ MOCK_SITE = SiteResponse(
     prompt="Сделай сайт про Стегозавров",
     created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    html_code_url=f"{settings.stub_url}/Стегозавры_ Гиганты Юрского периода.html",
-    html_code_download_url=f"{settings.stub_url}/Стегозавры_ Гиганты Юрского периода.html",
+    html_code_url=f"{settings.output_url}/index.html",
+    html_code_download_url=f"{settings.output_url}/index.html",
     screenshot_url=f"{settings.stub_url}/screenshot.jpg",
 )
 
@@ -69,15 +66,6 @@ def create_site(data: CreateSiteRequest) -> SiteResponse:
     return MOCK_SITE.model_copy(update=update_data)
 
 
-async def stream_stub_html(html_content: str) -> AsyncGenerator[str]:
-    """Генерирует части HTML-кода"""
-    chunk_size = 100
-    for i in range(0, len(html_content), chunk_size):
-        chunk = html_content[i : i + chunk_size]
-        yield chunk
-        await asyncio.sleep(0.05)
-
-
 @sites_router.post(
     "/{site_id}/generate",
     response_class=StreamingResponse,
@@ -102,14 +90,7 @@ async def generate_site(
     data: SiteGenerationRequest,
     site_id: int = Depends(validate_site_id),
 ) -> StreamingResponse:
-    # TO DO написать логику генерации HTML кода сайта через LLM
-    if not HTML_STUB_PATH.exists():
-        raise HTTPException(status_code=404, detail="Stub file not found")
-
-    with open(HTML_STUB_PATH, encoding="utf-8") as f:
-        html_content = f.read()
-
     return StreamingResponse(
-        stream_stub_html(html_content),
+        get_html_stream(data.prompt),
         media_type="text/html",
     )
