@@ -10,7 +10,7 @@ from src.api.sites.schemas import (
     SiteResponse,
 )
 from src.env_settings import settings
-from src.services.site_builder import get_html_stream
+from src.services.generation_stream import stream_generation
 
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
@@ -91,6 +91,6 @@ async def generate_site(
     site_id: int = Depends(validate_site_id),
 ) -> StreamingResponse:
     return StreamingResponse(
-        get_html_stream(data.prompt),
+        stream_generation(data.prompt),
         media_type="text/html",
     )

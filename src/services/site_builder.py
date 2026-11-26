@@ -25,8 +25,6 @@ async def _stream_with_title(
     title_logged = False
     async for chunk in generator(user_prompt):
         if not isinstance(chunk, str):
-            print(f"[DEBUG] Тип чанка: {type(chunk).__name__}")
-            print(f"[DEBUG] Содержимое: {chunk!r}")
             continue
 
         if not title_logged and generator.html_page.title:
