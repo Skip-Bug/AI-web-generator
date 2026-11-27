@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -9,27 +7,15 @@ from src.api.sites.schemas import (
     SiteGenerationRequest,
     SiteResponse,
 )
-from src.env_settings import settings
 from src.services.generation_stream import stream_generation
+from src.services.site_cards import get_mock_site, load_site_card, save_site_card
 
 sites_router = APIRouter(tags=["Sites"], prefix="/sites")
 
 
-MOCK_SITE = SiteResponse(
-    id=1,
-    title="Стегозавры: Гиганты Юрского периода",
-    prompt="Сделай сайт про Стегозавров",
-    created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    html_code_url=f"{settings.output_url}/index.html",
-    html_code_download_url=f"{settings.output_url}/index.html",
-    screenshot_url=f"{settings.stub_url}/screenshot.jpg",
-)
-
-
 def validate_site_id(site_id: int) -> int:
     """Проверяет, существует ли сайт. Если нет — кидает 404."""
-    if site_id != MOCK_SITE.id:
+    if site_id != 1:
         raise HTTPException(status_code=404, detail="Site not found")
     return site_id
 
@@ -39,8 +25,10 @@ def validate_site_id(site_id: int) -> int:
     summary="Список сайтов пользователя",
     response_description="Список всех сайтов, созданных текущим пользователем",
 )
-def get_my_sites() -> GeneratedSitesResponse:
-    return GeneratedSitesResponse(sites=[MOCK_SITE])
+async def get_my_sites() -> GeneratedSitesResponse:
+    card = await load_site_card()
+    site = SiteResponse(**card) if card else get_mock_site()
+    return GeneratedSitesResponse(sites=[site])
 
 
 @sites_router.get(
@@ -49,8 +37,9 @@ def get_my_sites() -> GeneratedSitesResponse:
     response_description="JSON-объект с полной информацией о сайте (метаданные)",
     response_model=SiteResponse,
 )
-def get_site(site_id: int = Depends(validate_site_id)) -> SiteResponse:
-    return MOCK_SITE
+async def get_site(site_id: int = Depends(validate_site_id)) -> SiteResponse:
+    card = await load_site_card()
+    return SiteResponse(**card) if card else get_mock_site()
 
 
 @sites_router.post(
@@ -59,11 +48,12 @@ def get_site(site_id: int = Depends(validate_site_id)) -> SiteResponse:
     response_description="JSON-объект с данными только что созданного сайта",
     response_model=SiteResponse,
 )
-def create_site(data: CreateSiteRequest) -> SiteResponse:
-    update_data = {"prompt": data.prompt}
+async def create_site(data: CreateSiteRequest) -> SiteResponse:
+    site = get_mock_site().model_copy(update={"prompt": data.prompt})
     if data.title is not None:
-        update_data["title"] = data.title
-    return MOCK_SITE.model_copy(update=update_data)
+        site = site.model_copy(update={"title": data.title})
+    await save_site_card(site.model_dump(mode="json"))
+    return site
 
 
 @sites_router.post(

@@ -7,9 +7,7 @@ from fastapi import HTTPException
 from html_page_generator import AsyncPageGenerator
 
 from src.env_settings import settings
-
-HTML_STUB_PATH = settings.stub_dir / "Стегозавры_ Гиганты Юрского периода.html"
-HTML_OUTPUT_PATH = settings.output_dir / "index.html"
+from src.services.resources import S3Storage
 
 
 def is_html_complete(html_code: str | None) -> bool:
@@ -34,28 +32,51 @@ async def _stream_with_title(
         yield chunk
 
 
+async def _save_local(
+    html_content: str,
+    output_path: Path | None = None,
+) -> None:
+    """Сохраняем локально"""
+    if output_path is None:
+        output_path = settings.html_output_path
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    await asyncio.to_thread(
+        output_path.write_text,
+        html_content,
+        encoding="utf-8",
+    )
+    print(f"[INFO] HTML сохранён локально: {output_path.absolute()}")
+
+
+async def _save_s3(
+    html_content: str,
+) -> None:
+    """Сохраняем в хранилище S3"""
+    s3_settings = settings.s3_settings
+    s3_client = S3Storage.get_initialized_instance()
+
+    await s3_client.put_object(  # type: ignore
+        Bucket=s3_settings.bucket_name,
+        Key="index.html",
+        Body=html_content.encode("utf-8"),
+        ContentType="text/html",
+        ContentDisposition="inline",
+    )
+    print(f"[INFO] HTML сохранён в S3: {s3_settings.bucket_name}/index.html")
+
+
 async def save_html(
     html_content: str,
-    output_path: Path = HTML_OUTPUT_PATH,
+    output_path: Path | None = None,
 ) -> None:
     """Сохраняет готовый HTML в файл."""
     if not html_content:
         return
-
-    try:
-        with CancelScope(shield=True):
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-            await asyncio.to_thread(
-                output_path.write_text,
-                html_content,
-                encoding="utf-8",
-            )
-    except Exception as exc:
-        print(f"[WARN] Не удалось сохранить файл: {type(exc).__name__}: {exc!r}")
-        return
-
-    print(f"[INFO] HTML сохранён: {output_path.absolute()}")
+    with CancelScope(shield=True):
+        if settings.save_mode:
+            await _save_local(html_content, output_path)
+        else:
+            await _save_s3(html_content)
 
 
 async def stream_stub_html(
@@ -97,10 +118,10 @@ def get_html_stream(prompt: str) -> AsyncGenerator[str]:
     if not settings.mock_mode:
         return stream_page(prompt)
 
-    if not HTML_STUB_PATH.is_file():
+    if not settings.html_stub_path.is_file():
         raise HTTPException(
             status_code=404,
             detail="Stub file not found",
         )
 
-    return stream_stub_html(HTML_STUB_PATH)
+    return stream_stub_html(settings.html_stub_path)
